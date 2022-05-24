@@ -53,23 +53,24 @@ stages:
     pool: 
       vmImage: 'windows-latest'
     steps:
-- task: AzureCLI@2
-  inputs:
-    scriptType: 'bash'
-    scriptLocation: 'inlineScript'
-    inlineScript: |
-      # Use 'az account list-locations --output table' to list available locations close to you
-      # Create a resource group
-      az group create --location $LOCATION --name $RESOURCEGROUPNAME
-      
-      # create and configure Azure SQL logical server and Azure SQL database
-      az sql server create -l $LOCATION -g $RESOURCEGROUPNAME -n $SQLSRVNAME -u $(ADMINUSER) -p $(ADMINPWD)
-      az sql db create -g $RESOURCEGROUPNAME -s $SQLSRVNAME -n $DBNAME --service-objective Basic
-      az sql server firewall-rule create -g $RESOURCEGROUPNAME -s $SQLSRVNAME -n allowazure --start-ip-address 0.0.0.0 --end-ip-address 0.0.0.0
-      
-      # create and configure an Azure App Service plan and an Azure web app
-      az appservice plan create -g $RESOURCEGROUPNAME -n $SVCPLANNAME --sku FREE
-      az webapp create -g $RESOURCEGROUPNAME -p $SVCPLANNAME -n $WEBAPPNAME
+      - task: AzureCLI@2
+        inputs:
+          azureSubscription: 'app-service-sqldb-dotnetcore-service-connection'
+          scriptType: 'bash'
+          scriptLocation: 'inlineScript'
+          inlineScript: |
+            # Use 'az account list-locations --output table' to list available locations close to you
+                  # Create a resource group
+                  az group create --location $LOCATION --name $RESOURCEGROUPNAME
+                  
+                  # create and configure Azure SQL logical server and Azure SQL database
+                  az sql server create -l $LOCATION -g $RESOURCEGROUPNAME -n $SQLSRVNAME -u $(ADMINUSER) -p $(ADMINPWD)
+                  az sql db create -g $RESOURCEGROUPNAME -s $SQLSRVNAME -n $DBNAME --service-objective Basic
+                  az sql server firewall-rule create -g $RESOURCEGROUPNAME -s $SQLSRVNAME -n allowazure --start-ip-address 0.0.0.0 --end-ip-address 0.0.0.0
+                  
+                  # create and configure an Azure App Service plan and an Azure web app
+                  az appservice plan create -g $RESOURCEGROUPNAME -n $SVCPLANNAME --sku FREE
+                  az webapp create -g $RESOURCEGROUPNAME -p $SVCPLANNAME -n $WEBAPPNAME
       
 - stage: DeployASPNETApp
   jobs: 
@@ -83,3 +84,24 @@ stages:
         downloadType: 'single'
         artifactName: 'drop'
         downloadPath: '$(System.DefaultWorkingDirectory)'
+    - task: AzureRmWebAppDeployment@4
+      inputs:
+        ConnectionType: 'AzureRM'
+        azureSubscription: 'app-service-sqldb-dotnetcore-service-connection'
+        appType: 'webApp'
+        WebAppName: '$(WEBAPPNAME)'
+        packageForLinux: '$(System.DefaultWorkingDirectory)/**/*.zip'         
+    - task: AzureAppServiceSettings@1
+      inputs:
+        azureSubscription: 'app-service-sqldb-dotnetcore-service-connection'
+        appName: '$(WEBAPPNAME)'
+        resourceGroupName: '$(RESOURCEGROUPNAME)'
+        connectionStrings: |
+          [
+            {
+              "name": "MyDbConnection",
+              "value": "Server=tcp:$(SQLSRVNAME).database.windows.net,1433;Initial Catalog=tododb;Persist Security Info=False;User ID=$(ADMINUSER);Password=$(ADMINPWD);MultipleActiveResultSets=False;Encrypt=True;TrustServerCertificate=False;Connection Timeout=30;",
+              "type": "SqlAzure",
+              "slotSetting": false
+            }
+          ]
