@@ -98,8 +98,7 @@ stages:
                   # Set identifier URI, homepage, redirect URI, and resource access
                   az ad app update --id $appId --identifier-uris api://$appId --reply-urls $redirectUri  --homepage $homePageUrl --required-resource-accesses @manifest.json
 
-                  tenantId=$(az account show --query tenantId --output tsv)
-                  issuer="https://sts.windows.net/$tenantId/"
+                  issuer="https://sts.windows.net/$TENANTID/"
 
                   az config set extension.use_dynamic_install=yes_without_prompt
 
