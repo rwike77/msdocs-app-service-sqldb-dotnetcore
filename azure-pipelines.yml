@@ -99,14 +99,14 @@ stages:
             secret=$(az ad app credential reset --id $appId --query password --output tsv)
             echo "Got secret"
 
+            az config set extension.use_dynamic_install=yes_without_prompt
+            az extension add --name authV2
+
             # Set identifier URI, homepage, redirect URI, and resource access
             az ad app update --id $appId --identifier-uris api://$appId --reply-urls $redirectUri  --homepage $homePageUrl --required-resource-accesses @manifest.json
             echo "Updated app"
 
             issuer="https://sts.windows.net/$TENANTID/"
-
-            az config set extension.use_dynamic_install=yes_without_prompt
-            az extension add --name authV2
 
             az webapp config appsettings set --name $WEBAPPNAME --resource-group $RESOURCEGROUPNAME --slot-settings MICROSOFT_PROVIDER_AUTHENTICATION_SECRET=$secret
             echo "Set web app settings"
