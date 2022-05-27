@@ -106,6 +106,7 @@ stages:
             issuer="https://sts.windows.net/$TENANTID/"
 
             az config set extension.use_dynamic_install=yes_without_prompt
+            az extension add --name authV2
 
             az webapp config appsettings set --name $WEBAPPNAME --resource-group $RESOURCEGROUPNAME --slot-settings MICROSOFT_PROVIDER_AUTHENTICATION_SECRET=$secret
             echo "Set web app settings"
