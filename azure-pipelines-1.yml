@@ -123,7 +123,7 @@ stages:
             az extension add --name authV2
 
             # Set identifier URI, homepage, redirect URI, and resource access
-            az ad app update --id $appIdTest --identifier-urisTest api://$appIdTest --reply-urls $redirectUriTest  --homepage $homePageUrlTest --required-resource-accesses @manifest.json
+            az ad app update --id $appIdTest --identifier-uris api://$appIdTest --reply-urls $redirectUriTest  --homepage $homePageUrlTest --required-resource-accesses @manifest.json
             echo "Updated app"
 
             issuerTest="https://sts.windows.net/$TENANTID/"
@@ -160,7 +160,7 @@ stages:
             az extension add --name authV2
 
             # Set identifier URI, homepage, redirect URI, and resource access
-            az ad app update --id $appIdStaging --identifier-urisStaging api://$appIdStaging --reply-urls $redirectUriStaging  --homepage $homePageUrlStaging --required-resource-accesses @manifest.json
+            az ad app update --id $appIdStaging --identifier-uris api://$appIdStaging --reply-urls $redirectUriStaging  --homepage $homePageUrlStaging --required-resource-accesses @manifest.json
             echo "Updated app"
 
             issuerStaging="https://sts.windows.net/$TENANTID/"
