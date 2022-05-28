@@ -63,44 +63,34 @@ stages:
             az group create --location $LOCATION --name $RESOURCEGROUPNAME
             echo "Created resource group $RESOURCEGROUPNAME"
 
-            # Create Dev resources
+            SUFFIX=$RANDOM
+
+            ### Create Dev resources
             # create and configure Azure SQL logical server and Azure SQL database
-            az sql server create -l $LOCATION -g $RESOURCEGROUPNAME -n $SQLSRVNAMEDEV -u $ADMINUSER -p $ADMINPWD
-            az sql db create -g $RESOURCEGROUPNAME -s $SQLSRVNAMEDEV -n $DBNAME --service-objective Basic
-            az sql server firewall-rule create -g $RESOURCEGROUPNAME -s $SQLSRVNAMEDEV -n allowazure --start-ip-address 0.0.0.0 --end-ip-address 0.0.0.0
+            az sql server create -l $LOCATION -g $RESOURCEGROUPNAME -n $SQLSRVNAMEDEV$SUFFIX -u $ADMINUSER -p $ADMINPWD
+            az sql db create -g $RESOURCEGROUPNAME -s $SQLSRVNAMEDEV$SUFFIX -n $DBNAME --service-objective Basic
+            az sql server firewall-rule create -g $RESOURCEGROUPNAME -s $SQLSRVNAMEDEV$SUFFIX -n allowazure --start-ip-address 0.0.0.0 --end-ip-address 0.0.0.0
             echo "Created SQL server and SQL DB and SQL server firewall"
 
             # create and configure an Azure App Service plan and an Azure web app
             az appservice plan create -g $RESOURCEGROUPNAME -n $SVCPLANNAME --sku FREE
-            az webapp create -g $RESOURCEGROUPNAME -p $SVCPLANNAME -n $WEBAPPNAMEDEV
+            az webapp create -g $RESOURCEGROUPNAME -p $SVCPLANNAME -n $WEBAPPNAMEDEV$SUFFIX
             echo "Created App Service plan and webapp"
 
-            # Create Test resources
+            ### Create Test resources
             # create and configure Azure SQL logical server and Azure SQL database
-            az sql server create -l $LOCATION -g $RESOURCEGROUPNAME -n $SQLSRVNAMETEST -u $ADMINUSER -p $ADMINPWD
-            az sql db create -g $RESOURCEGROUPNAME -s $SQLSRVNAMETEST -n $DBNAME --service-objective Basic
-            az sql server firewall-rule create -g $RESOURCEGROUPNAME -s $SQLSRVNAMETEST -n allowazure --start-ip-address 0.0.0.0 --end-ip-address 0.0.0.0
+            az sql server create -l $LOCATION -g $RESOURCEGROUPNAME -n $SQLSRVNAMETEST$SUFFIX -u $ADMINUSER -p $ADMINPWD
+            az sql db create -g $RESOURCEGROUPNAME -s $SQLSRVNAMETEST$SUFFIX -n $DBNAME --service-objective Basic
+            az sql server firewall-rule create -g $RESOURCEGROUPNAME -s $SQLSRVNAMETEST$SUFFIX -n allowazure --start-ip-address 0.0.0.0 --end-ip-address 0.0.0.0
             echo "Created SQL server and SQL DB and SQL server firewall"
 
             # create and configure an Azure App Service plan and an Azure web app
             az appservice plan create -g $RESOURCEGROUPNAME -n $SVCPLANNAME --sku FREE
-            az webapp create -g $RESOURCEGROUPNAME -p $SVCPLANNAME -n $WEBAPPNAMETEST
+            az webapp create -g $RESOURCEGROUPNAME -p $SVCPLANNAME -n $WEBAPPNAMETEST$SUFFIX
             echo "Created App Service plan and webapp"
 
-            # Create Staging resources
-            # create and configure Azure SQL logical server and Azure SQL database
-            az sql server create -l $LOCATION -g $RESOURCEGROUPNAME -n $SQLSRVNAMESTAGING -u $ADMINUSER -p $ADMINPWD
-            az sql db create -g $RESOURCEGROUPNAME -s $SQLSRVNAME -n $DBNAME --service-objective Basic
-            az sql server firewall-rule create -g $RESOURCEGROUPNAME -s $SQLSRVNAME -n allowazure --start-ip-address 0.0.0.0 --end-ip-address 0.0.0.0
-            echo "Created SQL server and SQL DB and SQL server firewall"
-
-            # create and configure an Azure App Service plan and an Azure web app
-            az appservice plan create -g $RESOURCEGROUPNAME -n $SVCPLANNAME --sku FREE
-            az webapp create -g $RESOURCEGROUPNAME -p $SVCPLANNAME -n $WEBAPPNAME
-            echo "Created App Service plan and webapp"
-
-            redirectUri="https://$WEBAPPNAME.azurewebsites.net/.auth/login/aad/callback"
-            homePageUrl="https://$WEBAPPNAME.azurewebsites.net"
+            redirectUriTest="https://$WEBAPPNAMETEST$SUFFIX.azurewebsites.net/.auth/login/aad/callback"
+            homePageUrlTest="https://$WEBAPPNAMETEST$SUFFIX.azurewebsites.net"
 
             cat > manifest.json << EOF
             [
@@ -117,26 +107,78 @@ stages:
             EOF
 
             # Create app registration
-            appId=$(az ad app create --display-name $WEBAPPNAME --query appId --output tsv)
-            echo "Registered app: $appId"
+            appIdTest=$(az ad app create --display-name $WEBAPPNAMETEST$SUFFIX --query appIdTest --output tsv)
+            echo "Registered app: $appIdTest"
 
             # Get secret from the app
-            secret=$(az ad app credential reset --id $appId --query password --output tsv)
+            secretTest=$(az ad app credential reset --id $appIdTest --query password --output tsv)
             echo "Got secret"
 
             az config set extension.use_dynamic_install=yes_without_prompt
             az extension add --name authV2
 
             # Set identifier URI, homepage, redirect URI, and resource access
-            az ad app update --id $appId --identifier-uris api://$appId --reply-urls $redirectUri  --homepage $homePageUrl --required-resource-accesses @manifest.json
+            az ad app update --id $appIdTest --identifier-urisTest api://$appIdTest --reply-urls $redirectUriTest  --homepage $homePageUrlTest --required-resource-accesses @manifest.json
             echo "Updated app"
 
-            issuer="https://sts.windows.net/$TENANTID/"
+            issuerTest="https://sts.windows.net/$TENANTID/"
 
-            az webapp config appsettings set --name $WEBAPPNAME --resource-group $RESOURCEGROUPNAME --slot-settings MICROSOFT_PROVIDER_AUTHENTICATION_SECRET=$secret
+            az webapp config appsettings set --name $WEBAPPNAMETEST$SUFFIX --resource-group $RESOURCEGROUPNAME --slot-settings MICROSOFT_PROVIDER_AUTHENTICATION_SECRET=$secretTest
             echo "Set web app settings"
 
-            az webapp auth microsoft update --name $WEBAPPNAME --resource-group $RESOURCEGROUPNAME --client-id $appId --secret-setting MICROSOFT_PROVIDER_AUTHENTICATION_SECRET --allowed-audiences $redirectUri  --issuer $issuer
+            az webapp auth microsoft update --name $WEBAPPNAMETEST$SUFFIX --resource-group $RESOURCEGROUPNAME --client-id $appIdTest --secret-setting MICROSOFT_PROVIDER_AUTHENTICATION_SECRET --allowed-audiences $redirectUriTest  --issuer $issuerTest
+            echo "Set EasyAuth settings"
+
+            ### Create Staging resources
+            # create and configure Azure SQL logical server and Azure SQL database
+            az sql server create -l $LOCATION -g $RESOURCEGROUPNAME -n $SQLSRVNAMESTAGING$SUFFIX -u $ADMINUSER -p $ADMINPWD
+            az sql db create -g $RESOURCEGROUPNAME -s $SQLSRVNAMESTAGING$SUFFIX -n $DBNAME --service-objective Basic
+            az sql server firewall-rule create -g $RESOURCEGROUPNAME -s $SQLSRVNAMESTAGING$SUFFIX -n allowazure --start-ip-address 0.0.0.0 --end-ip-address 0.0.0.0
+            echo "Created SQL server and SQL DB and SQL server firewall"
+
+            # create and configure an Azure App Service plan and an Azure web app
+            az appservice plan create -g $RESOURCEGROUPNAME -n $SVCPLANNAME --sku FREE
+            az webapp create -g $RESOURCEGROUPNAME -p $SVCPLANNAME -n $WEBAPPNAMESTAGING$SUFFIX
+            echo "Created App Service plan and webapp"
+
+            redirectUriStaging="https://$WEBAPPNAMESTAGING$SUFFIX.azurewebsites.net/.auth/login/aad/callback"
+            homePageUrlStaging="https://$WEBAPPNAMESTAGING$SUFFIX.azurewebsites.net"
+
+            cat > manifest.json << EOF
+            [
+                {
+                    "resourceAppId": "00000003-0000-0000-c000-000000000000",
+                    "resourceAccess": [
+                      {
+                            "id": "e1fe6dd8-ba31-4d61-89e7-88639da4683d",
+                            "type": "Scope"
+                        }
+                    ]
+                }
+            ]
+            EOF
+
+            # Create app registration
+            appIdStaging=$(az ad app create --display-name $WEBAPPNAMESTAGING$SUFFIX --query appIdStaging --output tsv)
+            echo "Registered app: $appIdStaging"
+
+            # Get secret from the app
+            secretStaging=$(az ad app credential reset --id $appIdStaging --query password --output tsv)
+            echo "Got secret"
+
+            az config set extension.use_dynamic_install=yes_without_prompt
+            az extension add --name authV2
+
+            # Set identifier URI, homepage, redirect URI, and resource access
+            az ad app update --id $appIdStaging --identifier-urisStaging api://$appIdStaging --reply-urls $redirectUriStaging  --homepage $homePageUrlStaging --required-resource-accesses @manifest.json
+            echo "Updated app"
+
+            issuerStaging="https://sts.windows.net/$TENANTID/"
+
+            az webapp config appsettings set --name $WEBAPPNAMESTAGING$SUFFIX --resource-group $RESOURCEGROUPNAME --slot-settings MICROSOFT_PROVIDER_AUTHENTICATION_SECRET=$secretStaging
+            echo "Set web app settings"
+
+            az webapp auth microsoft update --name $WEBAPPNAMESTAGING$SUFFIX --resource-group $RESOURCEGROUPNAME --client-id $appIdStaging --secret-setting MICROSOFT_PROVIDER_AUTHENTICATION_SECRET --allowed-audiences $redirectUriStaging  --issuer $issuerStaging
             echo "Set EasyAuth settings"
       
 - stage: DeployASPNETApp
