@@ -171,10 +171,7 @@ stages:
   displayName: 'Deploy to the dev environment'
   dependsOn: Build
   condition: |
-    and
-    (
-      succeeded()
-    )
+    succeeded()    
   jobs: 
   - job: Dev
     pool: 
