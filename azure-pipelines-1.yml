@@ -84,9 +84,9 @@ stages:
 
             ### Create Dev resources
             # create and configure Azure SQL logical server and Azure SQL database
-            az sql server create -l $LOCATION -g $RESOURCEGROUPNAME -n $SQLSRVNAMEDEV -u $ADMINUSER -p $ADMINPWD
-            az sql db create -g $RESOURCEGROUPNAME -s $SQLSRVNAMEDEV -n $DBNAME --service-objective Basic
-            az sql server firewall-rule create -g $RESOURCEGROUPNAME -s $SQLSRVNAMEDEV -n allowazure --start-ip-address 0.0.0.0 --end-ip-address 0.0.0.0
+            az sql server create -l $LOCATION -g $RESOURCEGROUPNAME -n $SQLSERVERNAMEDEV -u $ADMINUSER -p $ADMINPWD
+            az sql db create -g $RESOURCEGROUPNAME -s $SQLSERVERNAMEDEV -n $DBNAME --service-objective Basic
+            az sql server firewall-rule create -g $RESOURCEGROUPNAME -s $SQLSERVERNAMEDEV -n allowazure --start-ip-address 0.0.0.0 --end-ip-address 0.0.0.0
             echo "Created SQL server and SQL DB and SQL server firewall"
 
             # create and configure an Azure App web app
@@ -95,9 +95,9 @@ stages:
 
             ### Create Test resources
             # create and configure Azure SQL logical server and Azure SQL database
-            az sql server create -l $LOCATION -g $RESOURCEGROUPNAME -n $SQLSRVNAMETEST -u $ADMINUSER -p $ADMINPWD
-            az sql db create -g $RESOURCEGROUPNAME -s $SQLSRVNAMETEST -n $DBNAME --service-objective Basic
-            az sql server firewall-rule create -g $RESOURCEGROUPNAME -s $SQLSRVNAMETEST -n allowazure --start-ip-address 0.0.0.0 --end-ip-address 0.0.0.0
+            az sql server create -l $LOCATION -g $RESOURCEGROUPNAME -n $SQLSERVERNAMETEST -u $ADMINUSER -p $ADMINPWD
+            az sql db create -g $RESOURCEGROUPNAME -s $SQLSERVERNAMETEST -n $DBNAME --service-objective Basic
+            az sql server firewall-rule create -g $RESOURCEGROUPNAME -s $SQLSERVERNAMETEST -n allowazure --start-ip-address 0.0.0.0 --end-ip-address 0.0.0.0
             echo "Created SQL server and SQL DB and SQL server firewall"
 
             # create and configure an Azure App Service web app
@@ -132,9 +132,9 @@ stages:
 
             ### Create Staging resources
             # create and configure Azure SQL logical server and Azure SQL database
-            az sql server create -l $LOCATION -g $RESOURCEGROUPNAME -n $SQLSRVNAMESTAGING -u $ADMINUSER -p $ADMINPWD
-            az sql db create -g $RESOURCEGROUPNAME -s $SQLSRVNAMESTAGING -n $DBNAME --service-objective Basic
-            az sql server firewall-rule create -g $RESOURCEGROUPNAME -s $SQLSRVNAMESTAGING -n allowazure --start-ip-address 0.0.0.0 --end-ip-address 0.0.0.0
+            az sql server create -l $LOCATION -g $RESOURCEGROUPNAME -n $SQLSERVERNAMESTAGING -u $ADMINUSER -p $ADMINPWD
+            az sql db create -g $RESOURCEGROUPNAME -s $SQLSERVERNAMESTAGING -n $DBNAME --service-objective Basic
+            az sql server firewall-rule create -g $RESOURCEGROUPNAME -s $SQLSERVERNAMESTAGING -n allowazure --start-ip-address 0.0.0.0 --end-ip-address 0.0.0.0
             echo "Created SQL server and SQL DB and SQL server firewall"
 
             # create and configure an Azure App Service web app
@@ -167,9 +167,10 @@ stages:
             az webapp auth microsoft update --name $WEBAPPNAMESTAGING --resource-group $RESOURCEGROUPNAME --client-id $appIdStaging --secret-setting MICROSOFT_PROVIDER_AUTHENTICATION_SECRET --allowed-audiences $redirectUriStaging  --issuer $issuerStaging
             echo "Set EasyAuth settings"
       
-- stage: DeployASPNETApp
+- stage: 'Dev'
+  displayName: 'Deploy to the dev environment'
   jobs: 
-  - job: DeployASPNETApp
+  - job: Dev
     pool: 
       vmImage: 'windows-latest'
     steps:
@@ -184,18 +185,18 @@ stages:
         ConnectionType: 'AzureRM'
         azureSubscription: 'app-service-sqldb-dotnetcore-service-connection'
         appType: 'webApp'
-        WebAppName: '$(WEBAPPNAME)'
+        WebAppName: '$(WEBAPPNAMEDEV)'
         packageForLinux: '$(System.DefaultWorkingDirectory)/**/*.zip'         
     - task: AzureAppServiceSettings@1
       inputs:
         azureSubscription: 'app-service-sqldb-dotnetcore-service-connection'
-        appName: '$(WEBAPPNAME)'
+        appName: '$(WEBAPPNAMEDEV)'
         resourceGroupName: '$(RESOURCEGROUPNAME)'
         connectionStrings: |
           [
             {
               "name": "MyDbConnection",
-              "value": "Server=tcp:$(SQLSRVNAME).database.windows.net,1433;Initial Catalog=tododb;Persist Security Info=False;User ID=$(ADMINUSER);Password=$(ADMINPWD);MultipleActiveResultSets=False;Encrypt=True;TrustServerCertificate=False;Connection Timeout=30;",
+              "value": "Server=tcp:$(SQLSERVERNAMEDEV).database.windows.net,1433;Initial Catalog=tododb;Persist Security Info=False;User ID=$(ADMINUSER);Password=$(ADMINPWD);MultipleActiveResultSets=False;Encrypt=True;TrustServerCertificate=False;Connection Timeout=30;",
               "type": "SqlAzure",
               "slotSetting": false
             }
