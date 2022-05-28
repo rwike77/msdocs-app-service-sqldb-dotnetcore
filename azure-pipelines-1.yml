@@ -48,6 +48,10 @@ stages:
         configuration: '$(buildConfiguration)'
 
 - stage: DeployAzureResources
+  displayName: 'Deploy resources to Azure'
+  dependsOn: Build
+  condition: |
+    succeeded()    
   jobs: 
   - job: DeployAzureResources
     pool: 
@@ -169,7 +173,7 @@ stages:
       
 - stage: 'Dev'
   displayName: 'Deploy to the dev environment'
-  dependsOn: Build
+  dependsOn: DeployAzureResources
   condition: |
     succeeded()    
   jobs: 
