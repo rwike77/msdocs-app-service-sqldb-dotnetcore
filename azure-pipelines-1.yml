@@ -65,33 +65,7 @@ stages:
 
             SUFFIX=$RANDOM
 
-            ### Create Dev resources
-            # create and configure Azure SQL logical server and Azure SQL database
-            az sql server create -l $LOCATION -g $RESOURCEGROUPNAME -n $SQLSRVNAMEDEV$SUFFIX -u $ADMINUSER -p $ADMINPWD
-            az sql db create -g $RESOURCEGROUPNAME -s $SQLSRVNAMEDEV$SUFFIX -n $DBNAME --service-objective Basic
-            az sql server firewall-rule create -g $RESOURCEGROUPNAME -s $SQLSRVNAMEDEV$SUFFIX -n allowazure --start-ip-address 0.0.0.0 --end-ip-address 0.0.0.0
-            echo "Created SQL server and SQL DB and SQL server firewall"
-
-            # create and configure an Azure App Service plan and an Azure web app
-            az appservice plan create -g $RESOURCEGROUPNAME -n $SVCPLANNAME --sku FREE
-            az webapp create -g $RESOURCEGROUPNAME -p $SVCPLANNAME -n $WEBAPPNAMEDEV$SUFFIX
-            echo "Created App Service plan and webapp"
-
-            ### Create Test resources
-            # create and configure Azure SQL logical server and Azure SQL database
-            az sql server create -l $LOCATION -g $RESOURCEGROUPNAME -n $SQLSRVNAMETEST$SUFFIX -u $ADMINUSER -p $ADMINPWD
-            az sql db create -g $RESOURCEGROUPNAME -s $SQLSRVNAMETEST$SUFFIX -n $DBNAME --service-objective Basic
-            az sql server firewall-rule create -g $RESOURCEGROUPNAME -s $SQLSRVNAMETEST$SUFFIX -n allowazure --start-ip-address 0.0.0.0 --end-ip-address 0.0.0.0
-            echo "Created SQL server and SQL DB and SQL server firewall"
-
-            # create and configure an Azure App Service plan and an Azure web app
-            az appservice plan create -g $RESOURCEGROUPNAME -n $SVCPLANNAME --sku FREE
-            az webapp create -g $RESOURCEGROUPNAME -p $SVCPLANNAME -n $WEBAPPNAMETEST$SUFFIX
-            echo "Created App Service plan and webapp"
-
-            redirectUriTest="https://$WEBAPPNAMETEST$SUFFIX.azurewebsites.net/.auth/login/aad/callback"
-            homePageUrlTest="https://$WEBAPPNAMETEST$SUFFIX.azurewebsites.net"
-
+            # Required resource access
             cat > manifest.json << EOF
             [
                 {
@@ -106,11 +80,40 @@ stages:
             ]
             EOF
 
+            # Create App Service plan
+            az appservice plan create -g $RESOURCEGROUPNAME -n $SVCPLANNAME --sku FREE
+            echo "Created App Service plan
+
+            ### Create Dev resources
+            # create and configure Azure SQL logical server and Azure SQL database
+            az sql server create -l $LOCATION -g $RESOURCEGROUPNAME -n $SQLSRVNAMEDEV$SUFFIX -u $ADMINUSER -p $ADMINPWD
+            az sql db create -g $RESOURCEGROUPNAME -s $SQLSRVNAMEDEV$SUFFIX -n $DBNAME --service-objective Basic
+            az sql server firewall-rule create -g $RESOURCEGROUPNAME -s $SQLSRVNAMEDEV$SUFFIX -n allowazure --start-ip-address 0.0.0.0 --end-ip-address 0.0.0.0
+            echo "Created SQL server and SQL DB and SQL server firewall"
+
+            # create and configure an Azure App web app
+            az webapp create -g $RESOURCEGROUPNAME -p $SVCPLANNAME -n $WEBAPPNAMEDEV$SUFFIX
+            echo "Created App Service plan and webapp"
+
+            ### Create Test resources
+            # create and configure Azure SQL logical server and Azure SQL database
+            az sql server create -l $LOCATION -g $RESOURCEGROUPNAME -n $SQLSRVNAMETEST$SUFFIX -u $ADMINUSER -p $ADMINPWD
+            az sql db create -g $RESOURCEGROUPNAME -s $SQLSRVNAMETEST$SUFFIX -n $DBNAME --service-objective Basic
+            az sql server firewall-rule create -g $RESOURCEGROUPNAME -s $SQLSRVNAMETEST$SUFFIX -n allowazure --start-ip-address 0.0.0.0 --end-ip-address 0.0.0.0
+            echo "Created SQL server and SQL DB and SQL server firewall"
+
+            # create and configure an Azure App Service web app
+            az webapp create -g $RESOURCEGROUPNAME -p $SVCPLANNAME -n $WEBAPPNAMETEST$SUFFIX
+            echo "Created App Service webapp"
+
+            redirectUriTest="https://$WEBAPPNAMETEST$SUFFIX.azurewebsites.net/.auth/login/aad/callback"
+            homePageUrlTest="https://$WEBAPPNAMETEST$SUFFIX.azurewebsites.net"
+
             # Create app registration
             appIdTest=$(az ad app create --display-name $WEBAPPNAMETEST$SUFFIX --query appIdTest --output tsv)
             echo "Registered app: $appIdTest"
 
-            # Get secret from the app
+            # Get secret from the app for App Service authentication
             secretTest=$(az ad app credential reset --id $appIdTest --query password --output tsv)
             echo "Got secret"
 
@@ -136,27 +139,12 @@ stages:
             az sql server firewall-rule create -g $RESOURCEGROUPNAME -s $SQLSRVNAMESTAGING$SUFFIX -n allowazure --start-ip-address 0.0.0.0 --end-ip-address 0.0.0.0
             echo "Created SQL server and SQL DB and SQL server firewall"
 
-            # create and configure an Azure App Service plan and an Azure web app
-            az appservice plan create -g $RESOURCEGROUPNAME -n $SVCPLANNAME --sku FREE
+            # create and configure an Azure App Service web app
             az webapp create -g $RESOURCEGROUPNAME -p $SVCPLANNAME -n $WEBAPPNAMESTAGING$SUFFIX
-            echo "Created App Service plan and webapp"
+            echo "Created App Service webapp"
 
             redirectUriStaging="https://$WEBAPPNAMESTAGING$SUFFIX.azurewebsites.net/.auth/login/aad/callback"
             homePageUrlStaging="https://$WEBAPPNAMESTAGING$SUFFIX.azurewebsites.net"
-
-            cat > manifest.json << EOF
-            [
-                {
-                    "resourceAppId": "00000003-0000-0000-c000-000000000000",
-                    "resourceAccess": [
-                      {
-                            "id": "e1fe6dd8-ba31-4d61-89e7-88639da4683d",
-                            "type": "Scope"
-                        }
-                    ]
-                }
-            ]
-            EOF
 
             # Create app registration
             appIdStaging=$(az ad app create --display-name $WEBAPPNAMESTAGING$SUFFIX --query appIdStaging --output tsv)
