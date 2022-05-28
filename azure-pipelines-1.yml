@@ -108,7 +108,7 @@ stages:
             homePageUrlTest="https://$WEBAPPNAMETEST.azurewebsites.net"
 
             # Create app registration
-            appIdTest=$(az ad app create --display-name $WEBAPPNAMETEST --query appIdTest --output tsv)
+            appIdTest=$(az ad app create --display-name $WEBAPPNAMETEST --query appId --output tsv)
             echo "Registered app: $appIdTest"
 
             # Get secret from the app for App Service authentication
@@ -145,7 +145,7 @@ stages:
             homePageUrlStaging="https://$WEBAPPNAMESTAGING.azurewebsites.net"
 
             # Create app registration
-            appIdStaging=$(az ad app create --display-name $WEBAPPNAMESTAGING --query appIdStaging --output tsv)
+            appIdStaging=$(az ad app create --display-name $WEBAPPNAMESTAGING --query appId --output tsv)
             echo "Registered app: $appIdStaging"
 
             # Get secret from the app
