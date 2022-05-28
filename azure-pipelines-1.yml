@@ -80,7 +80,7 @@ stages:
 
             # Create App Service plan
             az appservice plan create -g $RESOURCEGROUPNAME -n $SVCPLANNAME --sku FREE
-            echo "Created App Service plan
+            echo "Created App Service plan"
 
             ### Create Dev resources
             # create and configure Azure SQL logical server and Azure SQL database
