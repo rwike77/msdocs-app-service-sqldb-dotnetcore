@@ -208,3 +208,78 @@ stages:
               "slotSetting": false
             }
           ]
+
+- stage: 'Test'
+  displayName: 'Deploy to the test environment'
+  dependsOn: DeployAzureResources
+  condition: |
+    succeeded()    
+  jobs: 
+  - job: Dev
+    pool: 
+      vmImage: 'windows-latest'
+    steps:
+    - task: DownloadBuildArtifacts@0
+      inputs:
+        buildType: 'current'
+        downloadType: 'single'
+        artifactName: 'drop'
+        downloadPath: '$(System.DefaultWorkingDirectory)'
+    - task: AzureRmWebAppDeployment@4
+      inputs:
+        ConnectionType: 'AzureRM'
+        azureSubscription: 'app-service-sqldb-dotnetcore-service-connection'
+        appType: 'webApp'
+        WebAppName: '$(WEBAPPNAMETEST)'
+        packageForLinux: '$(System.DefaultWorkingDirectory)/**/*.zip'         
+    - task: AzureAppServiceSettings@1
+      inputs:
+        azureSubscription: 'app-service-sqldb-dotnetcore-service-connection'
+        appName: '$(WEBAPPNAMETEST)'
+        resourceGroupName: '$(RESOURCEGROUPNAME)'
+        connectionStrings: |
+          [
+            {
+              "name": "MyDbConnection",
+              "value": "Server=tcp:$(SQLSERVERNAMETEST).database.windows.net,1433;Initial Catalog=tododb;Persist Security Info=False;User ID=$(ADMINUSER);Password=$(ADMINPWD);MultipleActiveResultSets=False;Encrypt=True;TrustServerCertificate=False;Connection Timeout=30;",
+              "type": "SqlAzure",
+              "slotSetting": false
+            }
+          ]
+- stage: 'Staging'
+  displayName: 'Deploy to the staging environment'
+  dependsOn: DeployAzureResources
+  condition: |
+    succeeded()    
+  jobs: 
+  - job: Dev
+    pool: 
+      vmImage: 'windows-latest'
+    steps:
+    - task: DownloadBuildArtifacts@0
+      inputs:
+        buildType: 'current'
+        downloadType: 'single'
+        artifactName: 'drop'
+        downloadPath: '$(System.DefaultWorkingDirectory)'
+    - task: AzureRmWebAppDeployment@4
+      inputs:
+        ConnectionType: 'AzureRM'
+        azureSubscription: 'app-service-sqldb-dotnetcore-service-connection'
+        appType: 'webApp'
+        WebAppName: '$(WEBAPPNAMESTAGING)'
+        packageForLinux: '$(System.DefaultWorkingDirectory)/**/*.zip'         
+    - task: AzureAppServiceSettings@1
+      inputs:
+        azureSubscription: 'app-service-sqldb-dotnetcore-service-connection'
+        appName: '$(WEBAPPNAMESTAGING)'
+        resourceGroupName: '$(RESOURCEGROUPNAME)'
+        connectionStrings: |
+          [
+            {
+              "name": "MyDbConnection",
+              "value": "Server=tcp:$(SQLSERVERNAMESTAGING).database.windows.net,1433;Initial Catalog=tododb;Persist Security Info=False;User ID=$(ADMINUSER);Password=$(ADMINPWD);MultipleActiveResultSets=False;Encrypt=True;TrustServerCertificate=False;Connection Timeout=30;",
+              "type": "SqlAzure",
+              "slotSetting": false
+            }
+          ]
