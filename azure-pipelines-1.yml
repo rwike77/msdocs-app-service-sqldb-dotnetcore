@@ -86,6 +86,11 @@ stages:
             az appservice plan create -g $RESOURCEGROUPNAME -n $SVCPLANNAME --sku FREE
             echo "Created App Service plan"
 
+            # Create key vault
+            az keyvault create --name $KEYVAULTNAME --resource-group $RESOURCEGROUPNAME
+
+            az keyvault set-policy -n $KEYVAULTNAME --secret-permissions get set --object-id {GUID}
+
             ### Create Dev resources
             # create and configure Azure SQL logical server and Azure SQL database
             az sql server create -l $LOCATION -g $RESOURCEGROUPNAME -n $SQLSERVERNAMEDEV -u $ADMINUSER -p $ADMINPWD
