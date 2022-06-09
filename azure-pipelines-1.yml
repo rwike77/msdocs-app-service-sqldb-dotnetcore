@@ -98,7 +98,8 @@ stages:
             az keyvault secret set --name 'ADMINPWD' --vault-name $KEYVAULTNAME --value $ADMINPWD
             echo "Set pw secret"
 
-            echo "set secret"
+            testsecret=$(az keyvault secret show --name 'ADMINUSER' --vault-name $KEYVAULTNAME)
+            echo "Test secret: $testsecret"
 
 
       
