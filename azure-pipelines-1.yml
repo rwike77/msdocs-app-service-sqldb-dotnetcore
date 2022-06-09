@@ -100,7 +100,7 @@ stages:
             echo "Set pw secret ADMINPWD"
 
             testsecret=$(az keyvault secret show --name 'ADMINUSER' --vault-name $KEYVAULTNAME)
-            echo "Test secret: $testsecret.value"
+            echo "Test secret: $testsecret"
 
 
       
