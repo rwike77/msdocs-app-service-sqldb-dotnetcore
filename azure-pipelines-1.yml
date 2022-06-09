@@ -102,6 +102,11 @@ stages:
             testsecret=$(az keyvault secret show --name 'ADMINUSER' --vault-name $KEYVAULTNAME)
             echo "Test secret: $testsecret"
 
+            # create test users
+            TESTUSER1PWD=$(openssl rand -base64 14)
+            TESTUSER2PWD=$(openssl rand -base64 14)
+            az ad user create --display-name myuser --password password --user-principal-name myuser@contoso.com
+
 
       
 - stage: 'Dev'
