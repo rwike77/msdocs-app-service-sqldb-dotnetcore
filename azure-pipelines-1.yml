@@ -93,6 +93,7 @@ stages:
             az keyvault set-policy -n $KEYVAULTNAME --secret-permissions get set --object-id $PIPELINESPID
             echo "Set vault policy"
 
+            ADMINPWD=$(openssl rand -base64 14)
             az keyvault secret set --name ADMINUSER --vault-name $KEYVAULTNAME --value $ADMINUSER
             echo "Set user secret ADMINUSER"
             az keyvault secret set --name ADMINPWD --vault-name $KEYVAULTNAME --value $ADMINPWD
