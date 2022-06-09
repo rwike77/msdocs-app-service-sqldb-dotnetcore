@@ -91,7 +91,7 @@ stages:
 
             az keyvault set-policy -n $KEYVAULTNAME --secret-permissions get set --object-id $PIPELINESPID
 
-            az keyvault secret set --name MySecretName --vault-name $KEYVAULTNAME --value MyVault
+            az keyvault secret set --name $ADMINPW --vault-name $KEYVAULTNAME --value "Pa55w.rd1234"
 
             ### Create Dev resources
             # create and configure Azure SQL logical server and Azure SQL database
