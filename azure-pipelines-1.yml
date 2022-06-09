@@ -105,7 +105,8 @@ stages:
             # create test users
             TESTUSER1PWD=$(openssl rand -base64 14)
             TESTUSER2PWD=$(openssl rand -base64 14)
-            az ad user create --display-name myuser --password password --user-principal-name myuser@contoso.com
+            az ad user create --display-name $TESTUSER1 --password $TESTUSER1PWD --user-principal-name "${TESTUSER1}@fourthcoffeetest.onmicrosoft.com"
+            az ad user create --display-name $TESTUSER2 --password $TESTUSER2PWD --user-principal-name "${TESTUSER2}@fourthcoffeetest.onmicrosoft.com"
 
 
       
