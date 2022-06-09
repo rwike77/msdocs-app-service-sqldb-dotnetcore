@@ -94,9 +94,9 @@ stages:
             echo "Set vault policy"
 
             az keyvault secret set --name ADMINUSER --vault-name $KEYVAULTNAME --value $ADMINUSER
-            echo "Set user secret"
+            echo "Set user secret ADMINUSER"
             az keyvault secret set --name ADMINPWD --vault-name $KEYVAULTNAME --value $ADMINPWD
-            echo "Set pw secret"
+            echo "Set pw secret ADMINPWD"
 
             testsecret=$(az keyvault secret show --name 'ADMINUSER' --vault-name $KEYVAULTNAME)
             echo "Test secret: $testsecret.value"
