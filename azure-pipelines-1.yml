@@ -89,7 +89,9 @@ stages:
             # Create key vault
             az keyvault create --name $KEYVAULTNAME --resource-group $RESOURCEGROUPNAME
 
-            az keyvault set-policy -n $KEYVAULTNAME --secret-permissions get set --object-id {GUID}
+            az keyvault set-policy -n $KEYVAULTNAME --secret-permissions get set --object-id $PIPELINESPID
+
+            az keyvault secret set --name MySecretName --vault-name $KEYVAULTNAME --value MyVault
 
             ### Create Dev resources
             # create and configure Azure SQL logical server and Azure SQL database
