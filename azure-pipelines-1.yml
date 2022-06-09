@@ -105,9 +105,15 @@ stages:
             # create test users
             TESTUSER1PWD=$(openssl rand -base64 14)
             TESTUSER2PWD=$(openssl rand -base64 14)
+            az keyvault secret set --name TESTUSER1 --vault-name $KEYVAULTNAME --value $TESTUSER1
+            az keyvault secret set --name TESTUSER1PWD --vault-name $KEYVAULTNAME --value $TESTUSER1PWD
             az ad user create --display-name $TESTUSER1 --password $TESTUSER1PWD --user-principal-name "${TESTUSER1}@fourthcoffeetest.onmicrosoft.com"
-            az ad user create --display-name $TESTUSER2 --password $TESTUSER2PWD --user-principal-name "${TESTUSER2}@fourthcoffeetest.onmicrosoft.com"
+            echo "created user $TESTUSER1"
 
+            az keyvault secret set --name TESTUSER2 --vault-name $KEYVAULTNAME --value $TESTUSER2
+            az keyvault secret set --name TESTUSER2PWD --vault-name $KEYVAULTNAME --value $TESTUSER2PWD
+            az ad user create --display-name $TESTUSER2 --password $TESTUSER2PWD --user-principal-name "${TESTUSER2}@fourthcoffeetest.onmicrosoft.com"
+            echo "created user $TESTUSER2"
 
       
 - stage: 'Dev'
