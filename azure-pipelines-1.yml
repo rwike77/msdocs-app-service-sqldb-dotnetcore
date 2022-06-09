@@ -93,7 +93,7 @@ stages:
             az keyvault set-policy -n $KEYVAULTNAME --secret-permissions get set --object-id $PIPELINESPID
             echo "Set vault policy"
 
-            az keyvault secret set --name `$(ADMINPW)` --vault-name $KEYVAULTNAME --value "Pa55w.rd1234"
+            az keyvault secret set --name $ADMINPWD --vault-name $KEYVAULTNAME --value "Pa55w.rd1234"
             echo "set secret"
 
 
