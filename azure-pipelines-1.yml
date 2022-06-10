@@ -149,7 +149,7 @@ stages:
             az extension add --name authV2
 
             # Set identifier URI, homepage, redirect URI, and resource access
-            az ad app update --id $appIdTest --identifier-uris api://$appIdTest --reply-urls $redirectUriTest  --homepage $homePageUrlTest --required-resource-accesses @manifest.json
+            az ad app update --id $appIdTest --identifier-uris api://$appIdTest --web-redirect-uris $redirectUriTest  --web-home-page-url $homePageUrlTest --required-resource-accesses @manifest.json
             echo "Updated app"
 
             issuerTest="https://sts.windows.net/$TENANTID/"
