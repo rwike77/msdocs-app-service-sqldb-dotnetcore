@@ -63,28 +63,12 @@ stages:
           scriptType: 'bash'
           scriptLocation: 'inlineScript'
           inlineScript: |
+            # Create app registration for test client
+            appIdTestClient=$(az ad app create --display-name $TESTCLIENTNAME --is-fallback-public-client true --sign-in-audience AzureADMyOrg --query appId --output tsv)
+
             # Create a resource group
             az group create --location $LOCATION --name $RESOURCEGROUPNAME
             echo "Created resource group $RESOURCEGROUPNAME"
-
-            # Required resource access
-            cat > manifest.json << EOF
-            [
-                {
-                    "resourceAppId": "00000003-0000-0000-c000-000000000000",
-                    "resourceAccess": [
-                      {
-                            "id": "e1fe6dd8-ba31-4d61-89e7-88639da4683d",
-                            "type": "Scope"
-                        }
-                    ]
-                }
-            ]
-            EOF
-
-            # Create App Service plan
-            az appservice plan create -g $RESOURCEGROUPNAME -n $SVCPLANNAME --sku FREE
-            echo "Created App Service plan"
 
             # Create key vault
             az keyvault create --name $KEYVAULTNAME --resource-group $RESOURCEGROUPNAME
@@ -114,6 +98,67 @@ stages:
             az keyvault secret set --name TESTUSER2PWD --vault-name $KEYVAULTNAME --value $TESTUSER2PWD
             az ad user create --display-name $TESTUSER2 --password $TESTUSER2PWD --user-principal-name "${TESTUSER2}@fourthcoffeetest.onmicrosoft.com"
             echo "created user $TESTUSER2"
+
+
+
+
+            # Required resource access
+            cat > manifest.json << EOF
+            [
+                {
+                    "resourceAppId": "00000003-0000-0000-c000-000000000000",
+                    "resourceAccess": [
+                        {
+                            "id": "e1fe6dd8-ba31-4d61-89e7-88639da4683d",
+                            "type": "Scope"
+                        }
+                    ]
+                }
+            ]
+            EOF
+
+            # Create App Service plan
+            az appservice plan create -g $RESOURCEGROUPNAME -n $SVCPLANNAME --sku FREE
+            echo "Created App Service plan"
+
+
+
+            ### Create Test resources
+            # create and configure Azure SQL logical server and Azure SQL database
+            az sql server create -l $LOCATION -g $RESOURCEGROUPNAME -n $SQLSERVERNAMETEST -u $ADMINUSER -p $ADMINPWD
+            az sql db create -g $RESOURCEGROUPNAME -s $SQLSERVERNAMETEST -n $DBNAME --service-objective Basic
+            az sql server firewall-rule create -g $RESOURCEGROUPNAME -s $SQLSERVERNAMETEST -n allowazure --start-ip-address 0.0.0.0 --end-ip-address 0.0.0.0
+            echo "Created SQL server and SQL DB and SQL server firewall"
+
+            # create and configure an Azure App Service web app
+            az webapp create -g $RESOURCEGROUPNAME -p $SVCPLANNAME -n $WEBAPPNAMETEST
+            echo "Created App Service webapp"
+
+            redirectUriTest="https://$WEBAPPNAMETEST.azurewebsites.net/.auth/login/aad/callback"
+            homePageUrlTest="https://$WEBAPPNAMETEST.azurewebsites.net"
+
+            # Create app registration for App Service authentication
+            appIdTest=$(az ad app create --display-name $WEBAPPNAMETEST --query appId --output tsv)
+            echo "Registered app: $appIdTest"
+
+            # Get secret from the app for App Service authentication
+            secretTest=$(az ad app credential reset --id $appIdTest --query password --output tsv)
+            echo "Got secret"
+
+            az config set extension.use_dynamic_install=yes_without_prompt
+            az extension add --name authV2
+
+            # Set identifier URI, homepage, redirect URI, and resource access
+            az ad app update --id $appIdTest --identifier-uris api://$appIdTest --reply-urls $redirectUriTest  --homepage $homePageUrlTest --required-resource-accesses @manifest.json
+            echo "Updated app"
+
+            issuerTest="https://sts.windows.net/$TENANTID/"
+
+            az webapp config appsettings set --name $WEBAPPNAMETEST --resource-group $RESOURCEGROUPNAME --slot-settings MICROSOFT_PROVIDER_AUTHENTICATION_SECRET=$secretTest
+            echo "Set web app settings"
+
+            az webapp auth microsoft update --name $WEBAPPNAMETEST --resource-group $RESOURCEGROUPNAME --client-id $appIdTest --secret-setting MICROSOFT_PROVIDER_AUTHENTICATION_SECRET --allowed-audiences $redirectUriTest  --issuer $issuerTest
+            echo "Set EasyAuth settings"
 
       
 - stage: 'Dev'
